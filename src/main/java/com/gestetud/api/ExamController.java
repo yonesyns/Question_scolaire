@@ -3,6 +3,7 @@ package com.gestetud.api;
 import com.gestetud.api.dto.ExamInput;
 import com.gestetud.model.*;
 import com.gestetud.notification.*;
+import com.gestetud.external.*;
 import com.gestetud.repo.*;
 import jakarta.validation.Valid;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,23 +17,31 @@ import java.util.*;
 public class ExamController extends ApiSupport {
     private final CourseRepository courses; private final ExamRepository exams; private final EvaluationTypeRepository types;
     private final RegistrationRepository registrations; private final ApplicationEventPublisher events;
+    private final ExternalExamIntegrationService externalIntegration;
     public ExamController(CourseRepository courses,ExamRepository exams,EvaluationTypeRepository types,
-                          RegistrationRepository registrations,ApplicationEventPublisher events){
-        this.courses=courses;this.exams=exams;this.types=types;this.registrations=registrations;this.events=events;
+                          RegistrationRepository registrations,ApplicationEventPublisher events,ExternalExamIntegrationService externalIntegration){
+        this.courses=courses;this.exams=exams;this.types=types;this.registrations=registrations;this.events=events;this.externalIntegration=externalIntegration;
     }
     @GetMapping public List<Exam> findAll() { return exams.findAll(); }
-    @PostMapping @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping @ResponseStatus(HttpStatus.CREATED) @Transactional
     public Exam create(@Valid @RequestBody ExamInput input) {
         Course course=require(courses.findById(input.courseId()),"Module");
         EvaluationType type=require(types.findByCode(input.evaluationTypeCode()),"Type d'évaluation");
-        return exams.save(new Exam(course,input.date(),input.title(),type,Boolean.TRUE.equals(input.finalExam())));
+        Exam saved=exams.save(new Exam(course,input.date(),input.title(),type,Boolean.TRUE.equals(input.finalExam())));
+        events.publishEvent(new ExamSyncRequested(saved.id));
+        return saved;
     }
+    @GetMapping("/{id}/external")
+    public ExternalExamView consultExternal(@PathVariable Long id){return externalIntegration.consult(id);}
+    @PostMapping("/{id}/external-sync")
+    public ExternalExamView retryExternalSync(@PathVariable Long id){return externalIntegration.sync(id);}
     @PutMapping("/{id}") @Transactional
     public Exam update(@PathVariable Long id,@Valid @RequestBody ExamInput input){
         Exam exam=require(exams.findById(id),"Examen");Course oldCourse=exam.course;String oldTitle=exam.title;var oldDate=exam.date;
         Course course=require(courses.findById(input.courseId()),"Module");EvaluationType type=require(types.findByCode(input.evaluationTypeCode()),"Type d'évaluation");
         exam.course=course;exam.date=input.date();exam.title=input.title();exam.evaluationType=type;exam.finalExam=Boolean.TRUE.equals(input.finalExam());
         Exam saved=exams.save(exam);
+        events.publishEvent(new ExamSyncRequested(saved.id));
         if(!oldDate.equals(exam.date)||!oldTitle.equals(exam.title)||!oldCourse.id.equals(course.id)){
             Set<Long> notified=new HashSet<>();
             for(Course affected:List.of(oldCourse,course)){

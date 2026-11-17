@@ -33,6 +33,7 @@ public class DataInitializer implements CommandLineRunner {
             boolean changed=false;
             if(oldExam.evaluationType==null){oldExam.evaluationType=exam;changed=true;}
             if(oldExam.finalExam==null){oldExam.finalExam=false;changed=true;}
+            if(oldExam.externalSyncStatus==null){oldExam.externalSyncStatus=com.gestetud.external.ExternalSyncStatus.NOT_SYNCED;changed=true;}
             if(changed)exams.save(oldExam);
         }
         var target=courses.findByCode("INF202"); var required=courses.findByCode("INF101");

@@ -21,7 +21,9 @@ L'API est disponible sur `http://localhost:8080`. Au premier démarrage sur une 
 - `GET /courses/{courseId}/prerequisites` : consulter les prérequis d'un module.
 - `POST /courses/{courseId}/prerequisites` avec `prerequisiteCourseId`, `equivalentCourseId` facultatif et `minimumGrade` facultatif (10/20 par défaut) : ajouter une règle.
 - `DELETE /courses/{courseId}/prerequisites/{prerequisiteCourseId}` : retirer un prérequis.
-- `GET/POST/PUT /exams` : consulter/créer/modifier une évaluation (`courseId`, `date` au format `YYYY-MM-DD`, `title`, `evaluationTypeCode`).
+- `GET/POST/PUT /exams` : consulter/créer/modifier une évaluation (`courseId`, `date` au format `YYYY-MM-DD`, `title`, `evaluationTypeCode`). La création/modification déclenche la synchronisation externe après validation de la transaction.
+- `GET /exams/{id}/external` : consulter l’examen auprès de l’API externe et rafraîchir son statut local.
+- `POST /exams/{id}/external-sync` : relancer la création ou la mise à jour externe après une erreur.
 - `POST /grades` avec `examId`, `studentId`, `value` (0 à 20) : saisit une note si l'étudiant est inscrit au module de l'examen.
 - `GET /students/{id}/grades` : notes de l'étudiant.
 - `POST /courses/{courseId}/results/publish` : publie les résultats finaux disponibles des étudiants actifs et déclenche leurs notifications.
@@ -71,3 +73,10 @@ Les notifications sont centralisées, envoyées après validation de la transact
 - `GET /students/{studentId}/notifications` : historique des tentatives d’envoi et erreurs.
 
 L’email utilise la configuration SMTP Spring (`SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`). SMS et WhatsApp utilisent l’API de messagerie Twilio : configurer `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_SMS_FROM` et `TWILIO_WHATSAPP_FROM`. Le numéro destinataire doit être au format international E.164 ; WhatsApp nécessite un expéditeur WhatsApp Twilio configuré. Les messages WhatsApp utilisent les adresses de canal `whatsapp:` prévues par Twilio. Sans fournisseur configuré, la tentative est conservée en `FAILED` avec une erreur explicite ; l’application continue de fonctionner.
+
+
+## Intégration d’examens externes
+
+L’examen interne est enregistré en premier dans MySQL, et ses notes restent toujours rattachées à son identifiant interne. Une synchronisation REST asynchrone conserve séparément l’identifiant externe, le statut brut, le statut normalisé (`SCHEDULED`, `CANCELLED`, `COMPLETED`, `UNKNOWN`), l’état de synchronisation et l’erreur éventuelle. La lecture ou la synchronisation externe ne supprime ni ne remplace les notes locales.
+
+Pour le projet académique, une API externe simulée est activée par défaut à `http://localhost:8080/mock-exam-api`. Elle permet de présenter l’échange REST sans compte fournisseur. Pour brancher une vraie API, définir `EXAM_API_BASE_URL` et `SPRING_PROFILES_ACTIVE=external-exam-api` (ce profil désactive l’API simulée). Les délais de connexion et de lecture sont configurables avec `EXAM_API_CONNECT_TIMEOUT_MS` et `EXAM_API_READ_TIMEOUT_MS`; `EXAM_API_ENABLED=false` désactive l’intégration. Une indisponibilité laisse l’examen et son historique locaux intacts, marque la synchronisation `FAILED`, et expose une route de relance.

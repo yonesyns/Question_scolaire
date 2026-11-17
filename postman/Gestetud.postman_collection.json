@@ -27,6 +27,10 @@
     {
       "key": "registrationId",
       "value": "1"
+    },
+    {
+      "key": "examId",
+      "value": "1"
     }
   ],
   "item": [
@@ -295,6 +299,42 @@
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/results/publish"
+      }
+    },
+    {
+      "name": "Consulter l'examen externe",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/exams/{{examId}}/external"
+      }
+    },
+    {
+      "name": "Relancer la synchronisation externe",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/exams/{{examId}}/external-sync"
+      }
+    },
+    {
+      "name": "Simuler un statut externe annulé",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":\"CANCELLED\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/mock-exam-api/exams/EXT-1/status"
       }
     }
   ]
