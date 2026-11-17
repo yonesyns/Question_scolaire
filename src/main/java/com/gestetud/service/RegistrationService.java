@@ -5,6 +5,10 @@ import com.gestetud.api.dto.CourseResult;
 import com.gestetud.api.dto.CancellationResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import com.gestetud.notification.NotificationEventType;
+import com.gestetud.notification.NotificationRequested;
+import org.springframework.context.ApplicationEventPublisher;
+import java.util.Map;
 import com.gestetud.repo.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,12 +28,13 @@ public class RegistrationService {
     private final GradeRepository grades;
     private final CourseResultService courseResults;
     private final EntityManager entityManager;
+    private final ApplicationEventPublisher events;
 
     public RegistrationService(StudentRepository students, CourseRepository courses,
                                RegistrationRepository registrations, CoursePrerequisiteRepository prerequisites,
-                               GradeRepository grades, CourseResultService courseResults, EntityManager entityManager) {
+                               GradeRepository grades, CourseResultService courseResults, EntityManager entityManager, ApplicationEventPublisher events) {
         this.students = students; this.courses = courses; this.registrations = registrations;
-        this.prerequisites = prerequisites; this.grades = grades; this.courseResults = courseResults; this.entityManager = entityManager;
+        this.prerequisites = prerequisites; this.grades = grades; this.courseResults = courseResults; this.entityManager = entityManager; this.events = events;
     }
 
     @Transactional
@@ -48,7 +53,9 @@ public class RegistrationService {
         Registration registration = existing.orElseGet(() -> new Registration(student, course));
         registration.status = activeCount < course.capacity ? Registration.ACTIVE : Registration.WAITING_LIST;
         registration.createdAt = LocalDateTime.now();
-        return registrations.save(registration);
+        Registration saved=registrations.save(registration);
+        if(Registration.ACTIVE.equals(saved.status))notifyAccepted(student,course);
+        return saved;
     }
 
     @Transactional
@@ -73,6 +80,7 @@ public class RegistrationService {
             if (promoted != null) {
                 promoted.status = Registration.ACTIVE;
                 registrations.save(promoted);
+                notifyAccepted(promoted.student,course);
             }
         }
         return new CancellationResult(registration, promoted,
@@ -84,6 +92,12 @@ public class RegistrationService {
         if (!courses.existsById(courseId))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Module introuvable");
         return registrations.findByCourseIdAndStatusOrderByCreatedAtAscIdAsc(courseId, Registration.WAITING_LIST);
+    }
+
+
+    private void notifyAccepted(Student student,Course course){
+        events.publishEvent(new NotificationRequested(student.id,NotificationEventType.REGISTRATION_ACCEPTED,
+                Map.of("courseCode",course.code,"courseTitle",course.title)));
     }
 
     private void validatePrerequisites(Student student, Course course) {

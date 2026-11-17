@@ -246,6 +246,56 @@
         "method": "DELETE",
         "url": "{{baseUrl}}/registrations/{{registrationId}}"
       }
+    },
+    {
+      "name": "Consulter préférences de notification",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/students/{{studentId}}/notification-preferences"
+      }
+    },
+    {
+      "name": "Configurer notifications",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"emailEnabled\":true,\"smsEnabled\":false,\"whatsappEnabled\":false,\"phoneNumber\":\"+212600000000\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/students/{{studentId}}/notification-preferences"
+      }
+    },
+    {
+      "name": "Historique des notifications",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/students/{{studentId}}/notifications"
+      }
+    },
+    {
+      "name": "Modèles de notification",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/notification-templates"
+      }
+    },
+    {
+      "name": "Publier résultats du module",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/results/publish"
+      }
     }
   ]
 }

@@ -3,6 +3,9 @@ package com.gestetud.service;
 import com.gestetud.api.dto.ExamEligibility;
 import com.gestetud.model.*;
 import com.gestetud.repo.*;
+import com.gestetud.notification.*;
+import org.springframework.context.ApplicationEventPublisher;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,16 +17,36 @@ import java.util.List;
 public class AttendanceService {
     private final CourseRepository courses; private final StudentRepository students;
     private final RegistrationRepository registrations; private final CourseSessionRepository sessions;
-    private final AttendanceRepository attendances;
+    private final AttendanceRepository attendances; private final RegistrationRepository registrationRepository;
+    private final ApplicationEventPublisher events;
     public AttendanceService(CourseRepository courses,StudentRepository students,RegistrationRepository registrations,
-                             CourseSessionRepository sessions,AttendanceRepository attendances) {
-        this.courses=courses;this.students=students;this.registrations=registrations;this.sessions=sessions;this.attendances=attendances;
+                             CourseSessionRepository sessions,AttendanceRepository attendances,ApplicationEventPublisher events) {
+        this.courses=courses;this.students=students;this.registrations=registrations;this.sessions=sessions;this.attendances=attendances;this.registrationRepository=registrations;this.events=events;
     }
 
     @Transactional
     public CourseSession createSession(Long courseId,LocalDate date,String title) {
         Course course=courses.findById(courseId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Module introuvable"));
-        return sessions.save(new CourseSession(course,date,title));
+        CourseSession session=sessions.save(new CourseSession(course,date,title));
+        notifySchedule(course,date.toString(),"",title);
+        return session;
+    }
+
+
+    @Transactional
+    public CourseSession updateSession(Long courseId,Long sessionId,LocalDate date,String title){
+        CourseSession session=sessions.findById(sessionId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Séance introuvable"));
+        if(!session.course.id.equals(courseId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Séance introuvable dans ce module");
+        LocalDate oldDate=session.date;String oldTitle=session.title;
+        session.date=date;session.title=title;CourseSession saved=sessions.save(session);
+        if(!oldDate.equals(date)||!oldTitle.equals(title))notifySchedule(session.course,date.toString(),oldDate.toString(),title);
+        return saved;
+    }
+
+    private void notifySchedule(Course course,String newDate,String oldDate,String title){
+        for(Registration registration:registrationRepository.findByCourseIdAndStatusOrderByIdAsc(course.id,Registration.ACTIVE))
+            events.publishEvent(new NotificationRequested(registration.student.id,NotificationEventType.SCHEDULE_CHANGED,
+                    Map.of("courseCode",course.code,"activityTitle",title,"oldDate",oldDate,"newDate",newDate)));
     }
 
     @Transactional(readOnly=true)

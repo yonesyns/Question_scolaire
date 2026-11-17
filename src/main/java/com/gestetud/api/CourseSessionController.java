@@ -13,6 +13,10 @@ public class CourseSessionController {
     private final AttendanceService service;
     public CourseSessionController(AttendanceService service){this.service=service;}
     @GetMapping public List<CourseSession> find(@PathVariable Long courseId){return service.findSessions(courseId);}
+    @PutMapping("/{sessionId}")
+    public CourseSession update(@PathVariable Long courseId,@PathVariable Long sessionId,@Valid @RequestBody CourseSessionInput input){
+        return service.updateSession(courseId,sessionId,input.date(),input.title());
+    }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public CourseSession create(@PathVariable Long courseId,@Valid @RequestBody CourseSessionInput input){
         return service.createSession(courseId,input.date(),input.title());

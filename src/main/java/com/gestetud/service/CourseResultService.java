@@ -13,9 +13,9 @@ import java.time.LocalDate;
 @Service
 public class CourseResultService {
     private final StudentRepository students; private final CourseRepository courses; private final GradeRepository grades;
-    private final CourseEvaluationRuleRepository rules; private final AttendanceService attendanceService;
-    public CourseResultService(StudentRepository students,CourseRepository courses,GradeRepository grades,CourseEvaluationRuleRepository rules,AttendanceService attendanceService){
-        this.students=students;this.courses=courses;this.grades=grades;this.rules=rules;this.attendanceService=attendanceService;
+    private final CourseEvaluationRuleRepository rules; private final AttendanceService attendanceService; private final ResultPublicationRepository publications;
+    public CourseResultService(StudentRepository students,CourseRepository courses,GradeRepository grades,CourseEvaluationRuleRepository rules,AttendanceService attendanceService,ResultPublicationRepository publications){
+        this.students=students;this.courses=courses;this.grades=grades;this.rules=rules;this.attendanceService=attendanceService;this.publications=publications;
     }
     @Transactional(readOnly=true)
     public CourseResult calculate(Long studentId,Long courseId){
@@ -39,8 +39,9 @@ public class CourseResultService {
         Double provisional=coveredWeight==0?null:round(weightedSum*100.0/coveredWeight);
         var eligibility=attendanceService.eligibility(student.id,course.id);
         Double finalAverage=complete&&eligibility.eligible()?round(weightedSum):null;
-        String publicationStatus=!eligibility.eligible()?"INELIGIBLE":(complete?"PUBLISHED":"INCOMPLETE");
-        return new CourseResult(student.id,course.id,course.code,course.title,finalAverage,provisional,round(coveredWeight),complete,eligibility.eligible(),eligibility.absencePercentage(),publicationStatus,means);
+        boolean published=publications.findByStudentIdAndCourseId(student.id,course.id).isPresent();
+        String publicationStatus=!eligibility.eligible()?"INELIGIBLE":(!complete?"INCOMPLETE":(published?"PUBLISHED":"READY"));
+        return new CourseResult(student.id,course.id,course.code,course.title,finalAverage,provisional,round(coveredWeight),complete,eligibility.eligible(),eligibility.absencePercentage(),published,publicationStatus,means);
     }
     private double round(double value){return Math.round(value*100.0)/100.0;}
 }
