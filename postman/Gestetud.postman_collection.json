@@ -23,6 +23,10 @@
     {
       "key": "sessionId",
       "value": "1"
+    },
+    {
+      "key": "registrationId",
+      "value": "1"
     }
   ],
   "item": [
@@ -227,6 +231,20 @@
           }
         },
         "url": "{{baseUrl}}/sessions/{{sessionId}}/attendance/{{studentId}}"
+      }
+    },
+    {
+      "name": "Consulter la liste d'attente",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/courses/{{courseId}}/waitlist"
+      }
+    },
+    {
+      "name": "Annuler une inscription (promouvoir le suivant si actif)",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/registrations/{{registrationId}}"
       }
     }
   ]

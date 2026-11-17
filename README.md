@@ -14,7 +14,9 @@ L'API est disponible sur `http://localhost:8080`. Au premier démarrage sur une 
 
 - `GET/POST /students`, `GET/PUT/DELETE /students/{id}` : CRUD étudiant (`name`, `email`, `program`).
 - `GET/POST /courses`, `GET/PUT/DELETE /courses/{id}` : CRUD module (`code`, `title`, `capacity`).
-- `POST /registrations` avec `studentId` et `courseId` : inscrit si les deux existent, si l'inscription n'existe pas déjà, si la capacité est disponible et si les prérequis sont validés.
+- `POST /registrations` avec `studentId` et `courseId` : inscrit l'étudiant (`ACTIVE`) ou le place en `WAITING_LIST` si le module est complet, après vérification des prérequis.
+- `GET /courses/{courseId}/waitlist` : consulter la liste d'attente dans l'ordre d'arrivée.
+- `DELETE /registrations/{registrationId}` : annuler une inscription ; si elle était active, le premier étudiant en attente est promu automatiquement.
 - `GET /students/{id}/registrations` : inscriptions d'un étudiant.
 - `GET /courses/{courseId}/prerequisites` : consulter les prérequis d'un module.
 - `POST /courses/{courseId}/prerequisites` avec `prerequisiteCourseId`, `equivalentCourseId` facultatif et `minimumGrade` facultatif (10/20 par défaut) : ajouter une règle.
@@ -51,3 +53,8 @@ Exemple de configuration :
 ## Présences et examen final
 
 Le pourcentage d’absence est calculé sur les séances du module déjà tenues ; seules les présences marquées `ABSENT` sont comptées (`EXCUSED` est exclu). À exactement 20 %, l’étudiant reste éligible ; au-delà, la saisie d’une note pour un examen déclaré final (`finalExam: true`) est refusée. Le calcul du résultat indique `publicationStatus` (`PUBLISHED`, `INCOMPLETE` ou `INELIGIBLE`) et n’expose pas de `finalAverage` si l’étudiant dépasse le seuil.
+
+
+## Inscriptions et liste d’attente
+
+Les inscriptions, annulations et promotions sont exécutées dans une transaction. Un verrou pessimiste sur la ligne du module sérialise les inscriptions concurrentes : la capacité active n’est pas dépassée. Les nouvelles demandes lorsque le module est complet reçoivent le statut `WAITING_LIST`; elles sont ordonnées par date de création, puis par identifiant. Annuler une demande en attente la retire de la file sans promotion. Annuler une inscription active libère la place et promeut la première demande en attente. Une inscription annulée peut être redemandée ; si le module est plein, elle rejoint la fin de la file.

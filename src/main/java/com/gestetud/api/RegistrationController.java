@@ -1,5 +1,6 @@
 package com.gestetud.api;
 
+import com.gestetud.api.dto.CancellationResult;
 import com.gestetud.api.dto.RegistrationInput;
 import com.gestetud.model.Registration;
 import com.gestetud.service.RegistrationService;
@@ -18,6 +19,12 @@ public class RegistrationController {
     public Registration register(@Valid @RequestBody RegistrationInput input) {
         return service.register(input.studentId(), input.courseId());
     }
+
+    @DeleteMapping("/registrations/{registrationId}")
+    public CancellationResult cancel(@PathVariable Long registrationId) { return service.cancel(registrationId); }
+
+    @GetMapping("/courses/{courseId}/waitlist")
+    public List<Registration> waitlist(@PathVariable Long courseId) { return service.findWaitingList(courseId); }
 
     @GetMapping("/students/{id}/registrations")
     public List<Registration> findByStudent(@PathVariable Long id) { return service.findByStudent(id); }
