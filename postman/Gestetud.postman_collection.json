@@ -1,0 +1,233 @@
+{
+  "info": {
+    "name": "Gestetud API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "studentId",
+      "value": "1"
+    },
+    {
+      "key": "courseId",
+      "value": "1"
+    },
+    {
+      "key": "examId",
+      "value": "1"
+    },
+    {
+      "key": "sessionId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Créer étudiant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Amine El Idrissi\",\"email\":\"amine@example.com\",\"program\":\"Informatique\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/students"
+      }
+    },
+    {
+      "name": "Créer module",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\":\"INFO101\",\"title\":\"Introduction à l'informatique\",\"capacity\":30}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/courses"
+      }
+    },
+    {
+      "name": "Inscrire étudiant (cas nominal)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"studentId\":{{studentId}},\"courseId\":{{courseId}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/registrations"
+      }
+    },
+    {
+      "name": "Consulter inscriptions étudiant",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/students/{{studentId}}/registrations"
+      }
+    },
+    {
+      "name": "Créer examen",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"courseId\":{{courseId}},\"date\":\"2026-11-30\",\"title\":\"Examen final\",\"evaluationTypeCode\":\"EXAM\",\"finalExam\":true}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/exams"
+      }
+    },
+    {
+      "name": "Saisir note",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"examId\":{{examId}},\"studentId\":{{studentId}},\"value\":15.5}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/grades"
+      }
+    },
+    {
+      "name": "Étudiant inconnu (404)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/students/999999"
+      }
+    },
+    {
+      "name": "Module complet (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"studentId\":999999,\"courseId\":{{courseId}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/registrations"
+      }
+    },
+    {
+      "name": "Lister les types d'évaluation",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/evaluation-types"
+      }
+    },
+    {
+      "name": "Voir la formule du module",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/courses/{{courseId}}/evaluation-rules"
+      }
+    },
+    {
+      "name": "Calculer résultat étudiant/module",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/students/{{studentId}}/courses/{{courseId}}/result"
+      }
+    },
+    {
+      "name": "Éligibilité à l'examen final",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/students/{{studentId}}/courses/{{courseId}}/exam-eligibility"
+      }
+    },
+    {
+      "name": "Présences d'une séance",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/sessions/{{sessionId}}/attendance"
+      }
+    },
+    {
+      "name": "Marquer une absence",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":\"ABSENT\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/sessions/{{sessionId}}/attendance/{{studentId}}"
+      }
+    }
+  ]
+}

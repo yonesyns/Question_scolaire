@@ -1,0 +1,1 @@
+package com.gestetud.repo; import com.gestetud.model.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface RegistrationRepository extends JpaRepository<Registration,Long> { long countByCourseIdAndStatus(Long id,String status); List<Registration> findByStudentId(Long id); boolean existsByStudentIdAndCourseId(Long s,Long c); }

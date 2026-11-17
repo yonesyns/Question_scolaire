@@ -1,0 +1,14 @@
+# Maven
+/target/
+
+# IDE
+.idea/
+*.iml
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
